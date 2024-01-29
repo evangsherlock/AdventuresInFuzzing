@@ -1,0 +1,24 @@
+// Configure with settings like AFL-clang++ and AddressSanitizer
+./configure --cc=afl-clang --cxx=afl-clang++ --extra-ldflags="-fsanitize=address -fsanitize=undefined -lubsan" --disable-stripping --enable-debug=3
+
+// Consolidate input corpus
+./AFLplusplus/afl-cmin -i image_corpus -o min_corpus -- ./ffmpeg2/ffmpeg -i @@
+
+// Initiate fuzzing of ffmpeg
+/home/evan/AFLplusplus/afl-fuzz -i ./min_corpus -o fuzz -m none -- ./ffmpeg2/ffmpeg -i @@
+
+// An attempt at using a dictionary along with an input corpus of different kinds of media
+/home/evan/AFLplusplus/afl-fuzz -x ffmpeg.dict -i ./all_media -o fuzz_all_media -m none -- ./ffmpeg-0.10.1/ffmpeg -i @@
+
+// Another example of using configure, but this time we are compiling libpng
+CC="afl-clang" CXX="afl-clang++" CFLAGS="-fsanitize=address -fsanitize=undefined -lubsan" ./configure --prefix=/usr --enable-shared --enable-static
+
+// Command using afl-clang that compiles a wrapper script for libpng
+/home/evan/AFLplusplus/afl-clang -fsanitize=address -fsanitize=undefined -lubsan libpng_test.c -o program -l:libpng.so -L:/usr/lib/
+
+// Initiate fuzzing of libpng
+/home/evan/AFLplusplus/afl-fuzz -i ./min_corpus -o fuzz -m none -- ./program @@
+
+
+
+
